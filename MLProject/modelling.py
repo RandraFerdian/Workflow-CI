@@ -15,19 +15,17 @@ DAGSHUB_URI = "https://dagshub.com/RandraFerdian/Eksperimen_SML_Randra.mlflow"
 
 # Setup Path (Sing Bener)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# Langsung nuding folder neng sandinge script, ora usah munggah
 DATA_PATH = os.path.join(SCRIPT_DIR, "btc_data_preprocessed") 
-# Pastike path file-e bener
 train_path = os.path.join(DATA_PATH, "train.csv")
 test_path = os.path.join(DATA_PATH, "test.csv")
 
 def load_data():
     print("[INFO] Loading data...")
     try:
-        train = pd.read_csv(os.path.join(DATA_PATH, "train.csv"))
-        test = pd.read_csv(os.path.join(DATA_PATH, "test.csv"))
+        train = pd.read_csv(train_path)
+        test = pd.read_csv(test_path)
     except FileNotFoundError:
-        print("[ERROR] Data ora ketemu. Jalanke preprocessing dhisik!")
+        print(f"[ERROR] Data ora ketemu neng: {DATA_PATH}")
         exit()
     
     X_train = train.drop(columns=['Target'])
@@ -41,7 +39,9 @@ def train_tuning_advance():
     print("[INFO] Nyambungke menyang DagsHub...")
     dagshub.init(repo_owner='RandraFerdian', repo_name='Eksperimen_SML_Randra', mlflow=True)
     mlflow.set_tracking_uri(DAGSHUB_URI)
-    mlflow.set_experiment("Bitcoin_Advance_Tuning")
+    
+    # ⚠️ REVISI 1: JENENG EKSPERIMEN DISAMAKNE KARO MAIN.YML
+    mlflow.set_experiment("Bitcoin_Sniper_FIX_311")
 
     with mlflow.start_run():
         print("[INFO] Mulai Hyperparameter Tuning...")
@@ -74,43 +74,31 @@ def train_tuning_advance():
             "test_f1": f1_score(y_test, predictions)
         }
         mlflow.log_metrics(metrics)
-        print(f"[RESULT] Testing Accuracy: {metrics['test_accuracy']:.4f}")
-        print(f"[RESULT] Testing Precision: {metrics['test_precision']:.4f}")
-        print(f"[RESULT] Testing Recall: {metrics['test_recall']:.4f}")
-        print(f"[RESULT] Testing F1 Score: {metrics['test_f1']:.4f}")
+        print(f"[RESULT] Testing Metrics: {metrics}")
 
         # --- C. ARTEFAK GAMBAR ---
-        
-        # Gambar 1: Confusion Matrix
         plt.figure(figsize=(6,5))
         cm = confusion_matrix(y_test, predictions)
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
         plt.title("Confusion Matrix (Testing)")
-        plt.ylabel("Actual")
-        plt.xlabel("Predicted")
         plt.tight_layout()
         plt.savefig("confusion_matrix.png")
         mlflow.log_artifact("confusion_matrix.png")
         
-        # Gambar 2: Feature Importance
-        plt.figure(figsize=(10,6))
-        importances = best_model.feature_importances_
-        indices = np.argsort(importances)[-10:]
-        plt.barh(range(len(indices)), importances[indices], align='center')
-        plt.yticks(range(len(indices)), [X_train.columns[i] for i in indices])
-        plt.title("Top 10 Indikator Penting")
-        plt.tight_layout()
-        plt.savefig("feature_importance.png")
-        mlflow.log_artifact("feature_importance.png")
-
-        # Simpen Model
-        mlflow.sklearn.log_model(best_model, "best_random_forest")
+        # REVISI 2 & 3: JENENG MODEL & ENVIRONMENT
+        # Kita nggunakake 'best_random_forest_final' (padha karo main.yml)
+        # Kita nambah 'conda_env' ben Python 3.11 kebaca neng Docker
+        print("[INFO] Logging model menyang MLflow...")
+        mlflow.sklearn.log_model(
+            sk_model=best_model, 
+            artifact_path="best_random_forest_final", 
+            conda_env="conda.yaml"
+        )
         
         # Resik-resik
         if os.path.exists("confusion_matrix.png"): os.remove("confusion_matrix.png")
-        if os.path.exists("feature_importance.png"): os.remove("feature_importance.png")
         
-        print("[DONE] SUKSES! Data wis mlebu DagsHub. Cek website-e!")
+        print("[DONE] SUKSES! Model Python 3.11 wis munggah DagsHub.")
 
 if __name__ == "__main__":
     train_tuning_advance()

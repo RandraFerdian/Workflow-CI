@@ -47,8 +47,7 @@ jobs:
           DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         run: |
           echo "🔍 Nggoleki Run ID paling anyar..."
-          LATEST_RUN=$(python -c "import mlflow; mlflow.set_tracking_uri('$MLFLOW_TRACKING_URI'); runs = mlflow.search_runs(experiment_names=['Bitcoin_Final_RF']); print(runs.iloc[0].run_id)")
-
+          LATEST_RUN=$(python -c "import mlflow; mlflow.set_tracking_uri('$MLFLOW_TRACKING_URI'); runs = mlflow.search_runs(experiment_names=['Bitcoin_Sniper_FIX_311']); print(runs.iloc[0].run_id)")
           echo "✅ Nemu Run ID: $LATEST_RUN"
 
           # --- PASTIKE USERNAME IKI BENER ---
