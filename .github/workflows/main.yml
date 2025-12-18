@@ -21,7 +21,7 @@ jobs:
     # 3. Install Alat Perang
     - name: Install dependencies
       run: |
-        pip install mlflow<3 dagshub pandas scikit-learn numpy matplotlib seaborn virtualenv
+        pip install "mlflow<3" dagshub pandas scikit-learn numpy matplotlib seaborn virtualenv
 
     # 4. TRAINING MODEL
     # Token DagsHub dijupuk seko Secrets GitHub
