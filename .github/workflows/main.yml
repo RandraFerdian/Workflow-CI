@@ -60,10 +60,7 @@ jobs:
         
         echo "🐳 Mulai Mbangun Docker Image: $DOCKER_USER/$IMAGE_NAME:latest"
         
-        mlflow models build-docker \
-          -m "runs:/$LATEST_RUN/best_random_forest_final" \
-          -n "docker.io/$DOCKER_USER/$IMAGE_NAME:latest" \
-          --enable-mlserver
+        mlflow models build-docker -m "runs:/$LATEST_RUN/best_random_forest_final" -n "docker.io/$DOCKER_USER/$IMAGE_NAME:latest"
 
         echo "🚀 Nge-Push menyang Docker Hub..."
         docker push "docker.io/$DOCKER_USER/$IMAGE_NAME:latest"
