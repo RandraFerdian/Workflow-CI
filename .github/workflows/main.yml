@@ -51,27 +51,32 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 6. BUILD & PUSH (LANGSUNG NJUPUK ID SEKA STEP 4)
-      - name: Build and Push Docker Image
+      # 6. GENERATE, OPREK, & BUILD (MANUAL FIX)
+      - name: Build and Push Docker Image (Manual Fix)
         env:
           MLFLOW_TRACKING_URI: "https://dagshub.com/RandraFerdian/Eksperimen_SML_Randra.mlflow"
           DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
           DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         run: |
-          # Ora perlu search-search maneh, langsung jupuk seka laci!
+          # Jupuk ID langsung seka Step 4 (Handover)
           LATEST_RUN=${{ env.MLFLOW_RUN_ID }}
 
-          echo "🎯 Target Run ID: $LATEST_RUN"
-
-          # --- ⚠️ GANTI USERNAME IKI ---
+          # GANTI USERNAME DOCKERMU NENG KENE
           DOCKER_USER="randraferdian"
           IMAGE_NAME="bitcoin-sniper"
 
-          echo "🐳 Mulai Mbangun Docker Image..."
+          echo "📂 1. Generasi Folder Dockerfile (Aja dibuild sek)..."
+          mlflow models generate-dockerfile -m "runs:/$LATEST_RUN/best_random_forest_final" -d docker_folder
 
-          mlflow models build-docker \
-            -m "runs:/$LATEST_RUN/best_random_forest_final" \
-            -n "docker.io/$DOCKER_USER/$IMAGE_NAME:latest"
+          echo "🔧 2. OPREK DOCKERFILE (Ganti Link PIP sing Error)..."
+          # IKI KUNCINE! Ngowahi link get-pip sing rusak dadi versi 3.8 support
+          sed -i 's|https://bootstrap.pypa.io/get-pip.py|https://bootstrap.pypa.io/pip/3.8/get-pip.py|g' docker_folder/Dockerfile
 
-          echo "🚀 Nge-Push menyang Docker Hub..."
+          # Cek hasile (Ben yakin wis keganti)
+          grep "get-pip" docker_folder/Dockerfile
+
+          echo "🐳 3. Build Docker Manual..."
+          docker build -t "docker.io/$DOCKER_USER/$IMAGE_NAME:latest" docker_folder
+
+          echo "🚀 4. Push menyang Docker Hub..."
           docker push "docker.io/$DOCKER_USER/$IMAGE_NAME:latest"
