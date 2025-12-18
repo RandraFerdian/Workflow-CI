@@ -1,4 +1,4 @@
-name: Bitcoin Advance CI/CD (Docker)
+name: Bitcoin Advance CI/CD (Direct Handover)
 
 on:
   push:
@@ -12,25 +12,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Setup Python 3.11 (ANYAR & STABIL)
+      # 2. Setup Python 3.11 (Wajib 3.11 ben get-pip ora error)
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
-      # 3. Install Alat Perang (Versi MLflow 2.17.2 sing paling aman)
+      # 3. Install Alat Perang
       - name: Install dependencies
         run: |
           pip install "mlflow==2.17.2" dagshub pandas scikit-learn numpy matplotlib seaborn virtualenv
 
-      # 4. TRAINING MODEL
+      # 4. TRAINING MODEL & TANGKEP ID-NE
       - name: Train Model
         env:
           DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
           DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         run: |
           cd MLProject
-          python modelling.py
+
+          # Jalanke script lan simpen outpute neng file log
+          python modelling.py > training_log.txt
+
+          # Tampilke log ben kowe iso maca
+          cat training_log.txt
+
+          # 🔍 Trik Magis: Jupuk RUN ID langsung seka log!
+          RUN_ID=$(grep "RUN_ID_OUTPUT:" training_log.txt | cut -d' ' -f2)
+
+          # Simpen ID menyang Laci GitHub (GITHUB_ENV) ben Step 6 iso njupuk
+          echo "MLFLOW_RUN_ID=$RUN_ID" >> $GITHUB_ENV
+          echo "✅ ID sing kecekel: $RUN_ID"
 
       # 5. LOGIN DOCKER HUB
       - name: Login to Docker Hub
@@ -39,24 +51,24 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 6. BUILD & PUSH DOCKER IMAGE
+      # 6. BUILD & PUSH (LANGSUNG NJUPUK ID SEKA STEP 4)
       - name: Build and Push Docker Image
         env:
           MLFLOW_TRACKING_URI: "https://dagshub.com/RandraFerdian/Eksperimen_SML_Randra.mlflow"
           DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
           DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         run: |
-          echo "🔍 Nggoleki Run ID paling anyar..."
-          LATEST_RUN=$(python -c "import mlflow; mlflow.set_tracking_uri('$MLFLOW_TRACKING_URI'); runs = mlflow.search_runs(experiment_names=['Bitcoin_Ultima_Fix_311']); print(runs.iloc[0].run_id)")
-          echo "✅ Nemu Run ID: $LATEST_RUN"
+          # Ora perlu search-search maneh, langsung jupuk seka laci!
+          LATEST_RUN=${{ env.MLFLOW_RUN_ID }}
 
-          # --- PASTIKE USERNAME IKI BENER ---
+          echo "🎯 Target Run ID: $LATEST_RUN"
+
+          # --- ⚠️ GANTI USERNAME IKI ---
           DOCKER_USER="randraferdian"
           IMAGE_NAME="bitcoin-sniper"
 
-          echo "🐳 Mulai Mbangun Docker Image nggo Python 3.11..."
+          echo "🐳 Mulai Mbangun Docker Image..."
 
-          # Printah Build (Nganggo MLflow 2.17.2 sing aman)
           mlflow models build-docker \
             -m "runs:/$LATEST_RUN/best_random_forest_final" \
             -n "docker.io/$DOCKER_USER/$IMAGE_NAME:latest"

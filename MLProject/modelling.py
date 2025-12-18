@@ -114,6 +114,8 @@ def train_tuning_advance():
             artifact_path="best_random_forest_final", 
             conda_env=custom_env  # <--- NGLEBOKNE VARIABLE DICTIONARY MAU
         )
+        run_id = mlflow.active_run().info.run_id
+        print(f"RUN_ID_OUTPUT: {run_id}")
         
         if os.path.exists("confusion_matrix.png"): os.remove("confusion_matrix.png")
         print("[DONE] SUKSES! Model Python 3.11 wis munggah.")
