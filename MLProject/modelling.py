@@ -13,11 +13,34 @@ import os
 # --- 1. KONFIGURASI DAGSHUB ---
 DAGSHUB_URI = "https://dagshub.com/RandraFerdian/Eksperimen_SML_Randra.mlflow"
 
-# Setup Path (Sing Bener)
+# Setup Path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(SCRIPT_DIR, "btc_data_preprocessed") 
 train_path = os.path.join(DATA_PATH, "train.csv")
 test_path = os.path.join(DATA_PATH, "test.csv")
+
+# ⚠️ DEFINISI ENVIRONMENT LANGSUNG (ANTI-GAGAL) ⚠️
+# Iki ngganteni conda.yaml. Kita paksa Python 3.11 neng kene!
+custom_env = {
+    'name': 'bitcoin-env-311',
+    'channels': ['defaults'],
+    'dependencies': [
+        'python=3.11',  # <--- KUNCINE NENG KENE!
+        'pip',
+        {
+            'pip': [
+                'mlflow==2.17.2',
+                'scikit-learn',
+                'pandas',
+                'numpy',
+                'matplotlib',
+                'seaborn',
+                'dagshub',
+                'virtualenv'
+            ]
+        }
+    ]
+}
 
 def load_data():
     print("[INFO] Loading data...")
@@ -35,19 +58,18 @@ def load_data():
     return X_train, y_train, X_test, y_test
 
 def train_tuning_advance():
-    # SETUP DAGSHUB
     print("[INFO] Nyambungke menyang DagsHub...")
     dagshub.init(repo_owner='RandraFerdian', repo_name='Eksperimen_SML_Randra', mlflow=True)
     mlflow.set_tracking_uri(DAGSHUB_URI)
     
-    # ⚠️ REVISI 1: JENENG EKSPERIMEN DISAMAKNE KARO MAIN.YML
-    mlflow.set_experiment("Bitcoin_Sniper_FIX_311")
+    # ⚠️ JENENG EKSPERIMEN ANYAR (SUPER FINAL)
+    mlflow.set_experiment("Bitcoin_Ultima_Fix_311")
 
     with mlflow.start_run():
         print("[INFO] Mulai Hyperparameter Tuning...")
         X_train, y_train, X_test, y_test = load_data()
 
-        # --- A. TUNING ---
+        # --- TUNING ---
         param_grid = {
             'n_estimators': [50, 100],
             'max_depth': [5, 10], 
@@ -62,7 +84,7 @@ def train_tuning_advance():
         best_params = grid_search.best_params_
         print(f"[SUCCESS] Best Params: {best_params}")
 
-        # --- B. LOGGING ---
+        # --- LOGGING ---
         mlflow.log_params(best_params)
         
         predictions = best_model.predict(X_test)
@@ -76,7 +98,7 @@ def train_tuning_advance():
         mlflow.log_metrics(metrics)
         print(f"[RESULT] Testing Metrics: {metrics}")
 
-        # --- C. ARTEFAK GAMBAR ---
+        # --- ARTEFAK ---
         plt.figure(figsize=(6,5))
         cm = confusion_matrix(y_test, predictions)
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
@@ -85,20 +107,16 @@ def train_tuning_advance():
         plt.savefig("confusion_matrix.png")
         mlflow.log_artifact("confusion_matrix.png")
         
-        # REVISI 2 & 3: JENENG MODEL & ENVIRONMENT
-        # Kita nggunakake 'best_random_forest_final' (padha karo main.yml)
-        # Kita nambah 'conda_env' ben Python 3.11 kebaca neng Docker
-        print("[INFO] Logging model menyang MLflow...")
+        # ⚠️ LOGGING MODEL KARO CUSTOM ENV
+        print("[INFO] Logging model karo Python 3.11 Force...")
         mlflow.sklearn.log_model(
             sk_model=best_model, 
             artifact_path="best_random_forest_final", 
-            conda_env="conda.yaml"
+            conda_env=custom_env  # <--- NGLEBOKNE VARIABLE DICTIONARY MAU
         )
         
-        # Resik-resik
         if os.path.exists("confusion_matrix.png"): os.remove("confusion_matrix.png")
-        
-        print("[DONE] SUKSES! Model Python 3.11 wis munggah DagsHub.")
+        print("[DONE] SUKSES! Model Python 3.11 wis munggah.")
 
 if __name__ == "__main__":
     train_tuning_advance()
