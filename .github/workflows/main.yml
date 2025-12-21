@@ -23,26 +23,29 @@ jobs:
         run: |
           pip install "mlflow==2.17.2" dagshub pandas scikit-learn numpy matplotlib seaborn virtualenv
 
-      # 4. TRAINING MODEL & TANGKEP ID-NE
-      - name: Train Model
+    # 4. TRAINING MODEL (PAKE MLFLOW RUN)
+      - name: Train Model via MLflow Project
         env:
-          DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
-          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          MLFLOW_TRACKING_URI: "https://dagshub.com/RandraFerdian/Eksperimen_SML_Randra.mlflow"
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
           cd MLProject
+          
+          mlflow run . --no-conda --env-manager=local > training_log.txt 2>&1
 
-          # Jalanke script lan simpen outpute neng file log
-          python modelling.py > training_log.txt
-
-          # Tampilke log ben kowe iso maca
+          # Tampilkan log
           cat training_log.txt
 
-          # 🔍 Trik Magis: Jupuk RUN ID langsung seka log!
+          # Tangkap ID
           RUN_ID=$(grep "RUN_ID_OUTPUT:" training_log.txt | cut -d' ' -f2)
+          
+          if [ -z "$RUN_ID" ]; then
+            echo "❌ GAGAL: Run ID ora ketemu!"
+            exit 1
+          fi
 
-          # Simpen ID menyang Laci GitHub (GITHUB_ENV) ben Step 6 iso njupuk
           echo "MLFLOW_RUN_ID=$RUN_ID" >> $GITHUB_ENV
-          echo "✅ ID sing kecekel: $RUN_ID"
 
       # 5. LOGIN DOCKER HUB
       - name: Login to Docker Hub
