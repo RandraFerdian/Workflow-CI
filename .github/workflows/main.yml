@@ -38,7 +38,7 @@ jobs:
           
           # JALANKE MLFLOW KARO PENANGANAN ERROR
           # Yen gagal (!), bakal mlebu blok 'then' kanggo nampilke log
-          if ! mlflow run . --env-manager=local > training_log.txt 2>&1; then
+          if ! mlflow run . --experiment-name Bitcoin_Ultima_Fix_311 --env-manager=local  > training_log.txt 2>&1; then
             echo "❌ TRAINING ERROR/GAGAL! ❌"
             echo "----------------------------------------"
             echo "Isi file training_log.txt:"
