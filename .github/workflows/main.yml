@@ -23,7 +23,7 @@ jobs:
         run: |
           pip install "mlflow==2.17.2" dagshub pandas scikit-learn numpy matplotlib seaborn virtualenv
 
-    # 4. TRAINING MODEL (PAKE MLFLOW RUN)
+      # 4. TRAINING MODEL (PAKE MLFLOW RUN)
       - name: Train Model via MLflow Project
         env:
           DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
@@ -34,24 +34,32 @@ jobs:
         run: |
           cd MLProject
 
-          # Jalanke MLflow Run
-          # Log disimpen neng file training_log.txt ben iso diwaca
-          mlflow run . --no-conda --env-manager=local > training_log.txt 2>&1
+          echo "🚀 Mulai Training..."
+          
+          # JALANKE MLFLOW KARO PENANGANAN ERROR
+          # Yen gagal (!), bakal mlebu blok 'then' kanggo nampilke log
+          if ! mlflow run . --no-conda --env-manager=local > training_log.txt 2>&1; then
+            echo "❌ TRAINING ERROR/GAGAL! ❌"
+            echo "----------------------------------------"
+            echo "Isi file training_log.txt:"
+            cat training_log.txt
+            echo "----------------------------------------"
+            exit 1  # Meksa exit error sawise nampilke log
+          fi
 
-          # Tampilke isi log neng layar (PENTING: Ben kowe ngerti error-e nek gagal meneh)
-          echo "=== ISI LOG TRAINING ==="
+          # YEN SUKSES, LANJUT KENE
+          echo "✅ Training Rampung. Cek Output Log:"
           cat training_log.txt
-          echo "========================"
 
           # Tangkap ID
           RUN_ID=$(grep "RUN_ID_OUTPUT:" training_log.txt | cut -d' ' -f2)
 
           if [ -z "$RUN_ID" ]; then
-            echo "❌ GAGAL: Run ID ora ketemu! Skrip Python mungkin crash."
+            echo "❌ GAGAL: Run ID ora ketemu neng log! (Apa modelling.py wis nge-print RUN_ID_OUTPUT?)"
             exit 1
           fi
 
-          echo "✅ ID TEMU: $RUN_ID"
+          echo "🎯 ID TEMU: $RUN_ID"
           echo "MLFLOW_RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
       # 5. LOGIN DOCKER HUB
